@@ -31,6 +31,11 @@ public class PersistenceOptions
     public bool AutoMigrateOnStartup { get; set; } = true;
     
     /// <summary>
+    /// Whether to enable initial data seeding
+    /// </summary>
+    public bool EnableSeeding { get; set; } = true;
+    
+    /// <summary>
     /// Data retention period
     /// </summary>
     public TimeSpan DataRetentionPeriod { get; set; } = TimeSpan.FromDays(90);

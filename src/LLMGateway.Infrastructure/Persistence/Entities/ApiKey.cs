@@ -54,4 +54,14 @@ public class ApiKey
     /// Monthly token limit
     /// </summary>
     public int MonthlyTokenLimit { get; set; } = 2000000;
+    
+    /// <summary>
+    /// User
+    /// </summary>
+    public virtual User User { get; set; } = null!;
+    
+    /// <summary>
+    /// Token usage records
+    /// </summary>
+    public virtual ICollection<TokenUsageRecord> TokenUsageRecords { get; set; } = new List<TokenUsageRecord>();
 }

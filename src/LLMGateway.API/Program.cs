@@ -202,6 +202,7 @@ if (builder.Configuration.GetValue<bool>("Persistence:UseDatabase") &&
     builder.Configuration.GetValue<bool>("Persistence:AutoMigrateOnStartup"))
 {
     app.MigrateDatabase();
+    app.SeedInitialData();
 }
 
 app.UseSwagger();

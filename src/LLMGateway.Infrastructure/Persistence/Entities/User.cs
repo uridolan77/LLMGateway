@@ -21,6 +21,11 @@ public class User
     public string Email { get; set; } = string.Empty;
     
     /// <summary>
+    /// Password hash
+    /// </summary>
+    public string? PasswordHash { get; set; }
+    
+    /// <summary>
     /// Created at
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -36,7 +41,27 @@ public class User
     public string Role { get; set; } = "User";
     
     /// <summary>
+    /// Last login timestamp
+    /// </summary>
+    public DateTimeOffset? LastLoginAt { get; set; }
+    
+    /// <summary>
     /// API keys
     /// </summary>
-    public ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    
+    /// <summary>
+    /// Token usage records
+    /// </summary>
+    public virtual ICollection<TokenUsageRecord> TokenUsageRecords { get; set; } = new List<TokenUsageRecord>();
+    
+    /// <summary>
+    /// Routing decisions
+    /// </summary>
+    public virtual ICollection<RoutingDecision> RoutingDecisions { get; set; } = new List<RoutingDecision>();
+    
+    /// <summary>
+    /// User permissions
+    /// </summary>
+    public virtual ICollection<UserPermission> Permissions { get; set; } = new List<UserPermission>();
 }

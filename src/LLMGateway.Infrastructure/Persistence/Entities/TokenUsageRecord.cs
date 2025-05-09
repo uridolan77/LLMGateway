@@ -64,4 +64,14 @@ public class TokenUsageRecord
     /// Estimated cost in USD
     /// </summary>
     public decimal EstimatedCostUsd { get; set; }
+    
+    /// <summary>
+    /// User
+    /// </summary>
+    public virtual User User { get; set; } = null!;
+    
+    /// <summary>
+    /// API key
+    /// </summary>
+    public virtual ApiKey ApiKey { get; set; } = null!;
 }
