@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text.Json.Serialization;
+using HealthChecks.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 

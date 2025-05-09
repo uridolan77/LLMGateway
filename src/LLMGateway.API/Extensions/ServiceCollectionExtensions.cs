@@ -1,4 +1,5 @@
 using LLMGateway.Core.Options;
+using LLMGateway.Core.Models.Provider;
 using LLMGateway.Providers.Anthropic;
 using LLMGateway.Providers.Cohere;
 using LLMGateway.Providers.HuggingFace;
@@ -127,7 +128,7 @@ public static class ServiceCollectionExtensions
                 await context.HttpContext.Response.WriteAsJsonAsync(new
                 {
                     error = "Too many requests. Please try again later.",
-                    retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter) ? retryAfter.TotalSeconds : null
+                    retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter) ? (double)retryAfter.TotalSeconds : 0
                 }, token);
             };
         });
@@ -144,10 +145,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddLLMProviders(this IServiceCollection services, IConfiguration configuration)
     {
         // Register all provider configurations
-        services.Configure<OpenAIOptions>(configuration.GetSection("Providers:OpenAI"));
-        services.Configure<AnthropicOptions>(configuration.GetSection("Providers:Anthropic"));
-        services.Configure<CohereOptions>(configuration.GetSection("Providers:Cohere"));
-        services.Configure<HuggingFaceOptions>(configuration.GetSection("Providers:HuggingFace"));
+        services.Configure<Core.Models.Provider.OpenAIOptions>(configuration.GetSection("Providers:OpenAI"));
+        services.Configure<Providers.Anthropic.AnthropicOptions>(configuration.GetSection("Providers:Anthropic"));
+        services.Configure<Providers.Cohere.CohereOptions>(configuration.GetSection("Providers:Cohere"));
+        services.Configure<Providers.HuggingFace.HuggingFaceOptions>(configuration.GetSection("Providers:HuggingFace"));
         
         // Register provider services
         services.AddHttpClient<OpenAIProvider>()

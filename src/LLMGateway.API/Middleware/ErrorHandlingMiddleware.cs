@@ -69,6 +69,8 @@ public class ErrorHandlingMiddleware
                 errorCode = "not_found";
                 break;
                 
+            // These specific not found cases are handled by the base NotFoundException case
+            /*
             case ModelNotFoundException:
                 code = HttpStatusCode.NotFound;
                 message = exception.Message;
@@ -80,6 +82,7 @@ public class ErrorHandlingMiddleware
                 message = exception.Message;
                 errorCode = "provider_not_found";
                 break;
+            */
                 
             case ProviderAuthenticationException:
                 code = HttpStatusCode.Unauthorized;
