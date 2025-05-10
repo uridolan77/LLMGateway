@@ -66,7 +66,7 @@ public class OpenAIProvider : BaseLLMProvider
     {
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<OpenAIListModelsResponse>("/models", _jsonOptions);
+            var response = await _httpClient.GetFromJsonAsync<OpenAIListModelsResponse>("/models", _jsonOptions).ConfigureAwait(false);
             
             if (response == null || response.Data == null)
             {
@@ -105,7 +105,7 @@ public class OpenAIProvider : BaseLLMProvider
                 providerModelId = modelId.Substring("openai.".Length);
             }
             
-            var response = await _httpClient.GetFromJsonAsync<OpenAIModel>($"/models/{providerModelId}", _jsonOptions);
+            var response = await _httpClient.GetFromJsonAsync<OpenAIModel>($"/models/{providerModelId}", _jsonOptions).ConfigureAwait(false);
             
             if (response == null)
             {
@@ -141,13 +141,13 @@ public class OpenAIProvider : BaseLLMProvider
             var openAIRequest = ConvertToOpenAICompletionRequest(request);
             
             // Send the request
-            var response = await _httpClient.PostAsJsonAsync("/chat/completions", openAIRequest, _jsonOptions, cancellationToken);
+            var response = await _httpClient.PostAsJsonAsync("/chat/completions", openAIRequest, _jsonOptions, cancellationToken).ConfigureAwait(false);
             
             // Check for errors
             response.EnsureSuccessStatusCode();
             
             // Parse the response
-            var openAIResponse = await response.Content.ReadFromJsonAsync<OpenAIChatCompletionResponse>(_jsonOptions, cancellationToken);
+            var openAIResponse = await response.Content.ReadFromJsonAsync<OpenAIChatCompletionResponse>(_jsonOptions, cancellationToken).ConfigureAwait(false);
             
             if (openAIResponse == null)
             {
@@ -191,17 +191,17 @@ public class OpenAIProvider : BaseLLMProvider
             var response = await _httpClient.SendAsync(
                 httpRequest, 
                 HttpCompletionOption.ResponseHeadersRead, 
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             
             // Check for errors
             response.EnsureSuccessStatusCode();
             
             // Read the streaming response
-            using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             using var reader = new StreamReader(stream);
             
             string? line;
-            while ((line = await reader.ReadLineAsync()) != null)
+            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
             {
                 // Skip empty lines and "data: [DONE]"
                 if (string.IsNullOrWhiteSpace(line) || line == "data: [DONE]")
@@ -279,7 +279,7 @@ public class OpenAIProvider : BaseLLMProvider
     {
         try
         {
-            var response = await _httpClient.GetAsync("/models");
+            var response = await _httpClient.GetAsync("/models").ConfigureAwait(false);
             return response.IsSuccessStatusCode;
         }
         catch

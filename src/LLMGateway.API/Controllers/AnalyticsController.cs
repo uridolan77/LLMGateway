@@ -1,4 +1,5 @@
-using LLMGateway.Core.Interfaces;
+using LLMGateway.Core.Features.TokenUsage.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,19 +12,19 @@ namespace LLMGateway.API.Controllers;
 [Authorize(Policy = "AdminAccess")]
 public class AnalyticsController : BaseApiController
 {
-    private readonly ITokenUsageService _tokenUsageService;
+    private readonly IMediator _mediator;
     private readonly ILogger<AnalyticsController> _logger;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="tokenUsageService">Token usage service</param>
+    /// <param name="mediator">Mediator</param>
     /// <param name="logger">Logger</param>
     public AnalyticsController(
-        ITokenUsageService tokenUsageService,
+        IMediator mediator,
         ILogger<AnalyticsController> logger)
     {
-        _tokenUsageService = tokenUsageService;
+        _mediator = mediator;
         _logger = logger;
     }
 
@@ -58,11 +59,14 @@ public class AnalyticsController : BaseApiController
                 ? new DateTimeOffset(endDate.Value, TimeSpan.Zero) 
                 : null;
 
-            var statistics = await _tokenUsageService.GetTokenUsageStatisticsAsync(
-                startDateOffset,
-                endDateOffset,
-                groupBy);
+            var query = new GetTokenUsageStatisticsQuery
+            {
+                StartDate = startDateOffset,
+                EndDate = endDateOffset,
+                GroupBy = groupBy
+            };
 
+            var statistics = await _mediator.Send(query);
             return Ok(statistics);
         }
         catch (Exception ex)

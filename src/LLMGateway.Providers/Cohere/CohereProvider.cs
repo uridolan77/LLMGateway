@@ -357,7 +357,7 @@ public class CohereProvider : BaseLLMProvider
         try
         {
             // Cohere doesn't have a health check endpoint, so we'll make a simple request
-            var response = await _httpClient.GetAsync("/v1/models");
+            var response = await _httpClient.GetAsync("/v1/models").ConfigureAwait(false);
             return response.IsSuccessStatusCode;
         }
         catch

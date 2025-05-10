@@ -1,5 +1,7 @@
+using LLMGateway.Core.Features.TokenUsage.Queries;
 using LLMGateway.Core.Interfaces;
 using LLMGateway.Core.Models.TokenUsage;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,22 +15,22 @@ namespace LLMGateway.API.Controllers;
 [Route("api/v{version:apiVersion}/admin")]
 public class AdminController : ControllerBase
 {
-    private readonly ITokenUsageService _tokenUsageService;
+    private readonly IMediator _mediator;
     private readonly ILLMProviderFactory _providerFactory;
     private readonly ILogger<AdminController> _logger;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="tokenUsageService">Token usage service</param>
+    /// <param name="mediator">Mediator</param>
     /// <param name="providerFactory">Provider factory</param>
     /// <param name="logger">Logger</param>
     public AdminController(
-        ITokenUsageService tokenUsageService,
+        IMediator mediator,
         ILLMProviderFactory providerFactory,
         ILogger<AdminController> logger)
     {
-        _tokenUsageService = tokenUsageService;
+        _mediator = mediator;
         _providerFactory = providerFactory;
         _logger = logger;
     }
@@ -55,7 +57,13 @@ public class AdminController : ControllerBase
             var start = startDate ?? DateTimeOffset.UtcNow.AddDays(-30);
             var end = endDate ?? DateTimeOffset.UtcNow;
             
-            var summary = await _tokenUsageService.GetUsageSummaryAsync(start, end);
+            var query = new GetTokenUsageSummaryQuery
+            {
+                StartDate = start,
+                EndDate = end
+            };
+            
+            var summary = await _mediator.Send(query);
             return Ok(summary);
         }
         catch (Exception ex)
@@ -89,7 +97,14 @@ public class AdminController : ControllerBase
             var start = startDate ?? DateTimeOffset.UtcNow.AddDays(-30);
             var end = endDate ?? DateTimeOffset.UtcNow;
             
-            var records = await _tokenUsageService.GetUsageForUserAsync(userId, start, end);
+            var query = new GetTokenUsageForUserQuery
+            {
+                UserId = userId,
+                StartDate = start,
+                EndDate = end
+            };
+            
+            var records = await _mediator.Send(query);
             return Ok(records);
         }
         catch (Exception ex)
@@ -123,7 +138,14 @@ public class AdminController : ControllerBase
             var start = startDate ?? DateTimeOffset.UtcNow.AddDays(-30);
             var end = endDate ?? DateTimeOffset.UtcNow;
             
-            var records = await _tokenUsageService.GetUsageForModelAsync(modelId, start, end);
+            var query = new GetTokenUsageForModelQuery
+            {
+                ModelId = modelId,
+                StartDate = start,
+                EndDate = end
+            };
+            
+            var records = await _mediator.Send(query);
             return Ok(records);
         }
         catch (Exception ex)

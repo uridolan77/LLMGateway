@@ -104,21 +104,40 @@ public abstract class BaseLLMProvider : ILLMProvider
                 return new RateLimitExceededException(Name, $"{errorMessage}: Rate limit exceeded");
             }
             
-            if (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || 
+                httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
                 return new ProviderAuthenticationException(Name, $"{errorMessage}: Authentication failed");
             }
             
             if (httpEx.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
-                httpEx.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+                httpEx.StatusCode == System.Net.HttpStatusCode.GatewayTimeout ||
+                httpEx.StatusCode == System.Net.HttpStatusCode.BadGateway ||
+                httpEx.StatusCode == System.Net.HttpStatusCode.InternalServerError)
             {
                 return new ProviderUnavailableException(Name, $"{errorMessage}: Service unavailable");
+            }
+            
+            if (httpEx.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                return new ProviderException(Name, $"{errorMessage}: Bad request", "bad_request", ex);
+            }
+            
+            if (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return new ProviderException(Name, $"{errorMessage}: Resource not found", "not_found", ex);
             }
         }
         
         if (ex is TaskCanceledException or OperationCanceledException)
         {
             return new ProviderException(Name, $"{errorMessage}: Request timed out", "timeout", ex);
+        }
+        
+        // If the exception is already a ProviderException, just return it
+        if (ex is ProviderException providerEx)
+        {
+            return providerEx;
         }
         
         // Default to a generic provider exception

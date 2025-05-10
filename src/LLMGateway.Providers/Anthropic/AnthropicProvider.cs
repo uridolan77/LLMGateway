@@ -196,13 +196,13 @@ public class AnthropicProvider : BaseLLMProvider
             var anthropicRequest = ConvertToAnthropicMessageRequest(request);
             
             // Send the request
-            var response = await _httpClient.PostAsJsonAsync("/v1/messages", anthropicRequest, _jsonOptions, cancellationToken);
+            var response = await _httpClient.PostAsJsonAsync("/v1/messages", anthropicRequest, _jsonOptions, cancellationToken).ConfigureAwait(false);
             
             // Check for errors
             response.EnsureSuccessStatusCode();
             
             // Parse the response
-            var anthropicResponse = await response.Content.ReadFromJsonAsync<AnthropicMessageResponse>(_jsonOptions, cancellationToken);
+            var anthropicResponse = await response.Content.ReadFromJsonAsync<AnthropicMessageResponse>(_jsonOptions, cancellationToken).ConfigureAwait(false);
             
             if (anthropicResponse == null)
             {
@@ -251,19 +251,19 @@ public class AnthropicProvider : BaseLLMProvider
             using var httpResponseMessage = await httpClient.SendAsync(
                 httpRequestMessage, 
                 HttpCompletionOption.ResponseHeadersRead, 
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
             
             // Ensure success
             httpResponseMessage.EnsureSuccessStatusCode();
             
             // Get the response stream
-            using var responseStream = await httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken);
+            using var responseStream = await httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             using var reader = new StreamReader(responseStream);
             
             // Process the SSE stream
             string? line;
             
-            while ((line = await reader.ReadLineAsync()) != null)
+            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
             {
                 // Skip empty lines
                 if (string.IsNullOrWhiteSpace(line))
@@ -340,7 +340,7 @@ public class AnthropicProvider : BaseLLMProvider
         try
         {
             // Anthropic doesn't have a health check endpoint, so we'll make a simple request
-            var response = await _httpClient.GetAsync("/v1/models");
+            var response = await _httpClient.GetAsync("/v1/models").ConfigureAwait(false);
             return response.IsSuccessStatusCode;
         }
         catch

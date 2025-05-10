@@ -76,6 +76,7 @@ public class HuggingFaceProvider : BaseLLMProvider
         try
         {
             // HuggingFace doesn't have a list models endpoint for inference API, so we'll return a hardcoded list
+            await Task.Delay(0).ConfigureAwait(false); // Make method truly async
             var models = new List<ModelInfo>();
             
             foreach (var model in _modelEndpoints)
@@ -124,6 +125,8 @@ public class HuggingFaceProvider : BaseLLMProvider
                 throw new ProviderException(Name, $"Model {modelId} not found");
             }
             
+            await Task.Delay(0).ConfigureAwait(false); // Make method truly async
+            
             return new ModelInfo
             {
                 Id = $"huggingface.{providerModelId.Replace('/', '_')}",
@@ -164,13 +167,13 @@ public class HuggingFaceProvider : BaseLLMProvider
             var huggingFaceRequest = ConvertToHuggingFaceTextGenerationRequest(request);
             
             // Send the request
-            var response = await _httpClient.PostAsJsonAsync($"/{request.ModelId}", huggingFaceRequest, _jsonOptions, cancellationToken);
+            var response = await _httpClient.PostAsJsonAsync($"/{request.ModelId}", huggingFaceRequest, _jsonOptions, cancellationToken).ConfigureAwait(false);
             
             // Check for errors
             response.EnsureSuccessStatusCode();
             
             // Parse the response
-            var huggingFaceResponse = await response.Content.ReadFromJsonAsync<HuggingFaceTextGenerationResponse[]>(_jsonOptions, cancellationToken);
+            var huggingFaceResponse = await response.Content.ReadFromJsonAsync<HuggingFaceTextGenerationResponse[]>(_jsonOptions, cancellationToken).ConfigureAwait(false);
             
             if (huggingFaceResponse == null || huggingFaceResponse.Length == 0)
             {
@@ -215,13 +218,13 @@ public class HuggingFaceProvider : BaseLLMProvider
             var huggingFaceRequest = ConvertToHuggingFaceFeatureExtractionRequest(request);
             
             // Send the request
-            var response = await _httpClient.PostAsJsonAsync($"/{request.ModelId}", huggingFaceRequest, _jsonOptions, cancellationToken);
+            var response = await _httpClient.PostAsJsonAsync($"/{request.ModelId}", huggingFaceRequest, _jsonOptions, cancellationToken).ConfigureAwait(false);
             
             // Check for errors
             response.EnsureSuccessStatusCode();
             
             // Parse the response
-            var huggingFaceResponse = await response.Content.ReadFromJsonAsync<List<List<float>>>(_jsonOptions, cancellationToken);
+            var huggingFaceResponse = await response.Content.ReadFromJsonAsync<List<List<float>>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
             
             if (huggingFaceResponse == null || huggingFaceResponse.Count == 0)
             {
@@ -243,7 +246,7 @@ public class HuggingFaceProvider : BaseLLMProvider
         try
         {
             // HuggingFace doesn't have a health check endpoint, so we'll make a simple request
-            var response = await _httpClient.GetAsync("/status");
+            var response = await _httpClient.GetAsync("/status").ConfigureAwait(false);
             return response.IsSuccessStatusCode;
         }
         catch
