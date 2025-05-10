@@ -168,18 +168,15 @@ public class AuthService : IAuthService
         var jwtToken = await _tokenService.GenerateAccessTokenAsync(user);
         
         _logger.LogInformation("Token refreshed successfully for user: {UserId}", user.Id);
-        
-        // Return login response
+          // Return login response
         return new LoginResponse
         {
-            Id = user.Id,
+            UserId = user.Id,
             Username = user.Username,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = user.Role,
-            Token = jwtToken,
-            RefreshToken = newRefreshToken.Token
+            Roles = user.Roles,
+            AccessToken = jwtToken,
+            RefreshToken = newRefreshToken.Token,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(60) // TODO: Get from JWT options
         };
     }
     

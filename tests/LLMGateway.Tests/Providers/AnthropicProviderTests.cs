@@ -15,6 +15,7 @@ public class AnthropicProviderTests
     private readonly Mock<IOptions<AnthropicOptions>> _mockOptions;
     private readonly Mock<ILogger<AnthropicProvider>> _mockLogger;
     private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
+    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
     private readonly HttpClient _httpClient;
     private readonly AnthropicProvider _provider;
 
@@ -30,10 +31,11 @@ public class AnthropicProviderTests
         });
         
         _mockLogger = new Mock<ILogger<AnthropicProvider>>();
+        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_mockHttpMessageHandler.Object);
         
-        _provider = new AnthropicProvider(_httpClient, _mockOptions.Object, _mockLogger.Object);
+        _provider = new AnthropicProvider(_httpClient, _mockHttpClientFactory.Object, _mockOptions.Object, _mockLogger.Object);
     }
 
     [Fact]

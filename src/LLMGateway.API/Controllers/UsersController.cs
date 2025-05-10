@@ -75,14 +75,13 @@ public class UsersController : BaseApiController
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
         try
-        {
-            var user = new User
+        {            var user = new User
             {
                 Username = request.Username,
                 Email = request.Email,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                Role = request.Role,
+                Roles = new List<string> { request.Role },
                 IsActive = true
             };
             
@@ -116,14 +115,13 @@ public class UsersController : BaseApiController
             {
                 return NotFound();
             }
-            
-            // Update user properties
+              // Update user properties
             user.Username = request.Username;
             user.Email = request.Email;
             user.FirstName = request.FirstName;
             user.LastName = request.LastName;
             user.IsActive = request.IsActive;
-            user.Role = request.Role;
+            user.Roles = new List<string> { request.Role };
             
             var result = await _userService.UpdateAsync(user);
             

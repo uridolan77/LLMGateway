@@ -73,8 +73,7 @@ public class UserService : IUserService
         
         // Create password hash
         var passwordHash = HashPassword(password);
-        
-        // Create user entity
+          // Create user entity
         var userEntity = new Persistence.Entities.User
         {
             Username = user.Username,
@@ -82,7 +81,7 @@ public class UserService : IUserService
             FirstName = user.FirstName,
             LastName = user.LastName,
             PasswordHash = passwordHash,
-            Role = user.Role ?? "User",
+            Role = user.Roles.FirstOrDefault() ?? "User",
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -119,14 +118,13 @@ public class UserService : IUserService
         {
             throw new InvalidOperationException($"Email '{user.Email}' is already registered");
         }
-        
-        // Update user properties
+          // Update user properties
         userEntity.Username = user.Username;
         userEntity.Email = user.Email;
         userEntity.FirstName = user.FirstName;
         userEntity.LastName = user.LastName;
         userEntity.IsActive = user.IsActive;
-        userEntity.Role = user.Role ?? userEntity.Role;
+        userEntity.Role = user.Roles.FirstOrDefault() ?? userEntity.Role;
         
         // Save changes
         _dbContext.Users.Update(userEntity);
@@ -207,8 +205,7 @@ public class UserService : IUserService
             
         return users.Select(MapToCore).ToList();
     }
-    
-    /// <inheritdoc/>
+      /// <inheritdoc/>
     public async Task<List<User>> GetUsersInRoleAsync(string role, int skip = 0, int take = 100)
     {
         var users = await _dbContext.Users
@@ -220,8 +217,7 @@ public class UserService : IUserService
             
         return users.Select(MapToCore).ToList();
     }
-    
-    /// <inheritdoc/>
+      /// <inheritdoc/>
     public async Task<bool> AddToRoleAsync(string userId, string role)
     {
         var user = await _dbContext.Users
@@ -239,8 +235,7 @@ public class UserService : IUserService
         
         return true;
     }
-    
-    /// <inheritdoc/>
+      /// <inheritdoc/>
     public async Task<bool> RemoveFromRoleAsync(string userId, string role)
     {
         var user = await _dbContext.Users
@@ -259,8 +254,7 @@ public class UserService : IUserService
         
         return true;
     }
-    
-    /// <inheritdoc/>
+      /// <inheritdoc/>
     public async Task<bool> IsInRoleAsync(string userId, string role)
     {
         return await _dbContext.Users
@@ -268,8 +262,7 @@ public class UserService : IUserService
     }
     
     #region Private methods
-    
-    /// <summary>
+      /// <summary>
     /// Map user entity to core model
     /// </summary>
     /// <param name="entity">User entity</param>
@@ -283,10 +276,10 @@ public class UserService : IUserService
             Email = entity.Email,
             FirstName = entity.FirstName,
             LastName = entity.LastName,
-            Role = entity.Role,
+            Roles = new List<string> { entity.Role },
             IsActive = entity.IsActive,
             CreatedAt = entity.CreatedAt.DateTime,
-            LastLoginAt = entity.LastLoginAt?.DateTime
+            LastLogin = entity.LastLoginAt?.DateTime
         };
     }
     
