@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
+using LLMGateway.Core.Interfaces;
+using LLMGateway.Infrastructure.Auth;
 
 namespace LLMGateway.API.Extensions;
 
@@ -166,6 +168,27 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<HuggingFaceProvider>()
             .AddPolicyHandler(PoliciesToProviders.GetRetryPolicy())
             .AddPolicyHandler(PoliciesToProviders.GetCircuitBreakerPolicy());
+        
+        return services;
+    }
+    
+    /// <summary>
+    /// Add authentication services
+    /// </summary>
+    /// <param name="services">Service collection</param>
+    /// <returns>Service collection</returns>
+    public static IServiceCollection AddAuthServices(this IServiceCollection services)
+    {
+        // Register JWT options for dependency injection
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration("Jwt")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+            
+        // Register authentication services
+        services.AddScoped<Core.Interfaces.ITokenService, Infrastructure.Auth.TokenService>();
+        services.AddScoped<Core.Interfaces.IUserService, Infrastructure.Auth.UserService>();
+        services.AddScoped<Core.Interfaces.IAuthService, Infrastructure.Auth.AuthService>();
         
         return services;
     }

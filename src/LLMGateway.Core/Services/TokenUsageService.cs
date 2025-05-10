@@ -238,6 +238,110 @@ public class TokenUsageService : ITokenUsageService
         }
     }
 
+    /// <inheritdoc/>
+    public Task<IEnumerable<object>> GetTokenUsageStatisticsAsync(DateTimeOffset? startDate, DateTimeOffset? endDate, string? groupBy)
+    {
+        var effectiveStartDate = startDate ?? DateTimeOffset.UtcNow.AddDays(-30);
+        var effectiveEndDate = endDate ?? DateTimeOffset.UtcNow;
+        
+        if (_options.StorageProvider == "InMemory")
+        {
+            var records = _inMemoryRecords
+                .Where(r => r.Timestamp >= effectiveStartDate && r.Timestamp <= effectiveEndDate)
+                .ToList();
+            
+            // Group by selected criteria
+            if (string.Equals(groupBy, "day", StringComparison.OrdinalIgnoreCase))
+            {
+                var grouped = records
+                    .GroupBy(r => r.Timestamp.Date)
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        PromptTokens = g.Sum(r => r.PromptTokens),
+                        CompletionTokens = g.Sum(r => r.CompletionTokens),
+                        TotalTokens = g.Sum(r => r.TotalTokens),
+                        Cost = g.Sum(r => r.EstimatedCostUsd)
+                    })
+                    .OrderBy(x => x.Date)
+                    .ToList();
+                
+                return Task.FromResult<IEnumerable<object>>(grouped);
+            }
+            else if (string.Equals(groupBy, "month", StringComparison.OrdinalIgnoreCase))
+            {
+                var grouped = records
+                    .GroupBy(r => new { r.Timestamp.Year, r.Timestamp.Month })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        PromptTokens = g.Sum(r => r.PromptTokens),
+                        CompletionTokens = g.Sum(r => r.CompletionTokens),
+                        TotalTokens = g.Sum(r => r.TotalTokens),
+                        Cost = g.Sum(r => r.EstimatedCostUsd)
+                    })
+                    .OrderBy(x => x.Year)
+                    .ThenBy(x => x.Month)
+                    .ToList();
+                
+                return Task.FromResult<IEnumerable<object>>(grouped);
+            }
+            else if (string.Equals(groupBy, "model", StringComparison.OrdinalIgnoreCase))
+            {
+                var grouped = records
+                    .GroupBy(r => r.ModelId)
+                    .Select(g => new
+                    {
+                        ModelId = g.Key,
+                        PromptTokens = g.Sum(r => r.PromptTokens),
+                        CompletionTokens = g.Sum(r => r.CompletionTokens),
+                        TotalTokens = g.Sum(r => r.TotalTokens),
+                        Cost = g.Sum(r => r.EstimatedCostUsd)
+                    })
+                    .OrderByDescending(x => x.TotalTokens)
+                    .ToList();
+                
+                return Task.FromResult<IEnumerable<object>>(grouped);
+            }
+            else if (string.Equals(groupBy, "user", StringComparison.OrdinalIgnoreCase))
+            {
+                var grouped = records
+                    .GroupBy(r => r.UserId)
+                    .Select(g => new
+                    {
+                        UserId = g.Key,
+                        PromptTokens = g.Sum(r => r.PromptTokens),
+                        CompletionTokens = g.Sum(r => r.CompletionTokens),
+                        TotalTokens = g.Sum(r => r.TotalTokens),
+                        Cost = g.Sum(r => r.EstimatedCostUsd)
+                    })
+                    .OrderByDescending(x => x.TotalTokens)
+                    .ToList();
+                
+                return Task.FromResult<IEnumerable<object>>(grouped);
+            }
+            else
+            {
+                // Default to total summary
+                var summary = new
+                {
+                    PromptTokens = records.Sum(r => r.PromptTokens),
+                    CompletionTokens = records.Sum(r => r.CompletionTokens),
+                    TotalTokens = records.Sum(r => r.TotalTokens),
+                    Cost = records.Sum(r => r.EstimatedCostUsd),
+                    RequestCount = records.Count()
+                };
+                
+                return Task.FromResult<IEnumerable<object>>(new[] { summary });
+            }
+        }
+        
+        // For database storage, this would be implemented in the infrastructure layer
+        _logger.LogDebug("Token usage statistics retrieval with provider {Provider} is handled by the infrastructure layer", _options.StorageProvider);
+        return Task.FromResult<IEnumerable<object>>(new List<object>());
+    }
+
     private void CleanupOldRecords()
     {
         if (_options.StorageProvider != "InMemory")

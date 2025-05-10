@@ -3,6 +3,8 @@ using LLMGateway.Core.Options;
 using LLMGateway.Infrastructure.Persistence;
 using LLMGateway.Infrastructure.Persistence.Entities;
 using LLMGateway.Infrastructure.Telemetry;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
@@ -16,7 +18,7 @@ namespace LLMGateway.Infrastructure.Monitoring;
 public class ProviderHealthMonitor : IProviderHealthMonitor
 {
     private readonly ILLMProviderFactory _providerFactory;
-    private readonly LLMGatewayDbContext? _dbContext;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IAlertService? _alertService;
     private readonly ITelemetryService _telemetryService;
     private readonly ILogger<ProviderHealthMonitor> _logger;
@@ -37,15 +39,14 @@ public class ProviderHealthMonitor : IProviderHealthMonitor
     /// <param name="options">Monitoring options</param>
     public ProviderHealthMonitor(
         ILLMProviderFactory providerFactory,
-        IServiceProvider serviceProvider,
+        IServiceScopeFactory serviceScopeFactory,
         IAlertService? alertService,
         ITelemetryService telemetryService,
         ILogger<ProviderHealthMonitor> logger,
         IOptions<MonitoringOptions> options)
     {
         _providerFactory = providerFactory;
-        _dbContext = options.Value.EnableHealthMonitoring && options.Value.TrackProviderAvailability ? 
-            serviceProvider.GetService(typeof(LLMGatewayDbContext)) as LLMGatewayDbContext : null;
+        _serviceScopeFactory = serviceScopeFactory;
         _alertService = alertService;
         _telemetryService = telemetryService;
         _logger = logger;
@@ -180,21 +181,27 @@ public class ProviderHealthMonitor : IProviderHealthMonitor
             }
             
             // Store health record in database if enabled
-            if (_dbContext != null && _options.TrackProviderAvailability)
+            if (_options.TrackProviderAvailability)
             {
                 try
                 {
-                    var record = new ProviderHealthRecord
+                    // Create a new scope to use the DbContext
+                    using (var scope = _serviceScopeFactory.CreateScope())
                     {
-                        Provider = provider.Name,
-                        IsAvailable = isAvailable,
-                        Timestamp = DateTimeOffset.UtcNow,
-                        ResponseTimeMs = stopwatch.ElapsedMilliseconds,
-                        ErrorMessage = errorMessage
-                    };
-                    
-                    await _dbContext.ProviderHealthRecords.AddAsync(record);
-                    await _dbContext.SaveChangesAsync();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<LLMGatewayDbContext>();
+                        
+                        var record = new ProviderHealthRecord
+                        {
+                            Provider = provider.Name,
+                            IsAvailable = isAvailable,
+                            Timestamp = DateTimeOffset.UtcNow,
+                            ResponseTimeMs = stopwatch.ElapsedMilliseconds,
+                            ErrorMessage = errorMessage
+                        };
+                        
+                        await dbContext.ProviderHealthRecords.AddAsync(record);
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
                 catch (Exception ex)
                 {

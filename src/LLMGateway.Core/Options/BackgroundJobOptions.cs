@@ -13,7 +13,7 @@ public class BackgroundJobOptions
     /// <summary>
     /// Cron schedule for token usage reports
     /// </summary>
-    public string TokenUsageReportSchedule { get; set; } = "0 0 * * *";
+    public string TokenUsageReportSchedule { get; set; } = "0 0 0 ? * * *";
     
     /// <summary>
     /// Whether to enable provider health checks
@@ -33,7 +33,7 @@ public class BackgroundJobOptions
     /// <summary>
     /// Cron schedule for model metrics aggregation
     /// </summary>
-    public string ModelMetricsAggregationSchedule { get; set; } = "0 * * * *";
+    public string ModelMetricsAggregationSchedule { get; set; } = "0 0 * ? * * *";
     
     /// <summary>
     /// Whether to enable database maintenance
@@ -43,7 +43,7 @@ public class BackgroundJobOptions
     /// <summary>
     /// Cron schedule for database maintenance
     /// </summary>
-    public string DatabaseMaintenanceSchedule { get; set; } = "0 1 * * 0";
+    public string DatabaseMaintenanceSchedule { get; set; } = "0 0 1 ? * SUN *";
     
     /// <summary>
     /// Whether to enable cost reports
@@ -53,7 +53,7 @@ public class BackgroundJobOptions
     /// <summary>
     /// Cron schedule for cost reports
     /// </summary>
-    public string CostReportSchedule { get; set; } = "0 0 1 * *";
+    public string CostReportSchedule { get; set; } = "0 0 0 1 * ? *";
     
     /// <summary>
     /// Email addresses to send reports to

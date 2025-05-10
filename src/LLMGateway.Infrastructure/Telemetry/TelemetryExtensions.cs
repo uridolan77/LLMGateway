@@ -36,9 +36,15 @@ public static class TelemetryExtensions
             });
             
             services.AddSingleton<ITelemetryInitializer, LLMGatewayTelemetryInitializer>();
+            services.AddSingleton<ITelemetryService, TelemetryService>();
         }
-        
-        services.AddSingleton<ITelemetryService, TelemetryService>();
+        else
+        {
+            // When no valid connection string is provided, register an empty ApplicationInsights setup
+            // and use the null implementation for our service
+            services.AddApplicationInsightsTelemetry(); // This creates a TelemetryClient with default config
+            services.AddSingleton<ITelemetryService, NullTelemetryService>();
+        }
         
         return services;
     }

@@ -21,6 +21,16 @@ public class User
     public string Email { get; set; } = string.Empty;
     
     /// <summary>
+    /// First name
+    /// </summary>
+    public string FirstName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Last name
+    /// </summary>
+    public string LastName { get; set; } = string.Empty;
+    
+    /// <summary>
     /// Password hash
     /// </summary>
     public string? PasswordHash { get; set; }
@@ -51,6 +61,11 @@ public class User
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
     
     /// <summary>
+    /// Refresh tokens
+    /// </summary>
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    
+    /// <summary>
     /// Token usage records
     /// </summary>
     public virtual ICollection<TokenUsageRecord> TokenUsageRecords { get; set; } = new List<TokenUsageRecord>();
@@ -61,7 +76,7 @@ public class User
     public virtual ICollection<RoutingDecision> RoutingDecisions { get; set; } = new List<RoutingDecision>();
     
     /// <summary>
-    /// User permissions
+    /// Permissions
     /// </summary>
     public virtual ICollection<UserPermission> Permissions { get; set; } = new List<UserPermission>();
 }

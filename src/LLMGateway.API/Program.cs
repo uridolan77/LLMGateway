@@ -1,6 +1,7 @@
 using LLMGateway.API.Extensions;
 using LLMGateway.API.Middleware;
 using LLMGateway.Core.Interfaces;
+using LLMGateway.Core.Options;
 using LLMGateway.Core.Routing;
 using LLMGateway.Core.Services;
 using LLMGateway.Infrastructure.Caching;
@@ -139,6 +140,7 @@ builder.Services.AddLLMGatewayOptions(builder.Configuration);
 
 // Add core services
 builder.Services.AddSingleton<ILLMProviderFactory, LLMProviderFactory>();
+builder.Services.AddScoped<ITokenUsageService, TokenUsageService>();
 builder.Services.AddScoped<ICompletionService, CompletionService>();
 builder.Services.AddScoped<IEmbeddingService, EmbeddingService>();
 builder.Services.AddScoped<IModelService, ModelService>();
@@ -147,6 +149,9 @@ builder.Services.AddScoped<IModelService, ModelService>();
 builder.Services.AddPersistence(builder.Configuration);
 
 // Add routing services
+builder.Services.AddScoped<IContentBasedRouter, ContentBasedRouter>();
+builder.Services.AddScoped<ICostOptimizedRouter, CostOptimizedRouter>();
+builder.Services.AddScoped<ILatencyOptimizedRouter, LatencyOptimizedRouter>();
 builder.Services.AddScoped<IModelRouter, SmartModelRouter>();
 
 // Add monitoring
@@ -177,9 +182,13 @@ if (!string.IsNullOrEmpty(builder.Configuration.GetValue<string>("Redis:Connecti
         .AddRedis(builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379", "redis");
 }
 
+// Add JWT options
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+
 // Add authentication and authorization
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthorizationPolicies();
+builder.Services.AddAuthServices();
 
 // Configure providers
 builder.Services.AddLLMProviders(builder.Configuration);

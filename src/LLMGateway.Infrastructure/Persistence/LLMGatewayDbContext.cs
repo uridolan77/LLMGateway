@@ -41,6 +41,16 @@ public class LLMGatewayDbContext : DbContext
     /// Users
     /// </summary>
     public DbSet<User> Users { get; set; } = null!;
+    
+    /// <summary>
+    /// Refresh tokens
+    /// </summary>
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+    
+    /// <summary>
+    /// Permissions
+    /// </summary>
+    public DbSet<Permission> Permissions { get; set; } = null!;
 
     /// <summary>
     /// Routing decisions
@@ -336,6 +346,29 @@ public class LLMGatewayDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.GrantedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+        
+        // Configure refresh tokens
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.Token).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.RevokedAt);
+            entity.Property(e => e.CreatedByIp).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.RevokedByIp).HasMaxLength(50);
+            entity.Property(e => e.ReasonRevoked).HasMaxLength(255);
+            
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -3,6 +3,7 @@ using LLMGateway.Core.Options;
 using LLMGateway.Infrastructure.Persistence;
 using LLMGateway.Infrastructure.Persistence.Entities;
 using LLMGateway.Infrastructure.Telemetry;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
@@ -14,7 +15,7 @@ namespace LLMGateway.Infrastructure.Monitoring;
 /// </summary>
 public class ModelPerformanceMonitor : IModelPerformanceMonitor
 {
-    private readonly LLMGatewayDbContext? _dbContext;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IAlertService? _alertService;
     private readonly ITelemetryService _telemetryService;
     private readonly ILogger<ModelPerformanceMonitor> _logger;
@@ -26,20 +27,19 @@ public class ModelPerformanceMonitor : IModelPerformanceMonitor
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="serviceProvider">Service provider</param>
+    /// <param name="serviceScopeFactory">Service scope factory</param>
     /// <param name="alertService">Alert service</param>
     /// <param name="telemetryService">Telemetry service</param>
     /// <param name="logger">Logger</param>
     /// <param name="options">Monitoring options</param>
     public ModelPerformanceMonitor(
-        IServiceProvider serviceProvider,
+        IServiceScopeFactory serviceScopeFactory,
         IAlertService? alertService,
         ITelemetryService telemetryService,
         ILogger<ModelPerformanceMonitor> logger,
         IOptions<MonitoringOptions> options)
     {
-        _dbContext = options.Value.EnableHealthMonitoring && options.Value.TrackModelPerformance ? 
-            serviceProvider.GetService(typeof(LLMGatewayDbContext)) as LLMGatewayDbContext : null;
+        _serviceScopeFactory = serviceScopeFactory;
         _alertService = alertService;
         _telemetryService = telemetryService;
         _logger = logger;
@@ -194,54 +194,59 @@ public class ModelPerformanceMonitor : IModelPerformanceMonitor
         
         _logger.LogInformation("Aggregating model metrics");
         
-        if (_dbContext == null || !_options.TrackModelPerformance)
+        if (!_options.TrackModelPerformance)
         {
             _logger.LogInformation("Model performance tracking is not enabled, skipping aggregation");
             return;
         }
         
-        foreach (var metrics in _modelMetrics)
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LLMGatewayDbContext>();
+        
+            foreach (var metrics in _modelMetrics)
+            {
+                try
+                {
+                    var record = new ModelMetricsRecord
+                    {
+                        ModelId = metrics.Value.ModelId,
+                        Provider = metrics.Value.Provider,
+                        Timestamp = DateTimeOffset.UtcNow,
+                        RequestCount = metrics.Value.RequestCount,
+                        SuccessCount = metrics.Value.SuccessCount,
+                        FailureCount = metrics.Value.FailureCount,
+                        TotalTokens = metrics.Value.TotalTokens,
+                        AverageResponseTimeMs = (long)metrics.Value.AverageResponseTimeMs,
+                        TotalCostUsd = metrics.Value.TotalCostUsd
+                    };
+                    
+                    await dbContext.ModelMetricsRecords.AddAsync(record);
+                    
+                    _logger.LogInformation("Aggregated metrics for model {ModelId}: requests={Requests}, success={Success}, failure={Failure}, tokens={Tokens}, cost={Cost}",
+                        metrics.Value.ModelId, metrics.Value.RequestCount, metrics.Value.SuccessCount, metrics.Value.FailureCount, metrics.Value.TotalTokens, metrics.Value.TotalCostUsd);
+                    
+                    // Reset metrics
+                    _modelMetrics[metrics.Key] = new ModelPerformanceMetrics
+                    {
+                        ModelId = metrics.Value.ModelId,
+                        Provider = metrics.Value.Provider
+                    };
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to store model metrics record for {ModelId}", metrics.Key);
+                }
+            }
+            
             try
             {
-                var record = new ModelMetricsRecord
-                {
-                    ModelId = metrics.Value.ModelId,
-                    Provider = metrics.Value.Provider,
-                    Timestamp = DateTimeOffset.UtcNow,
-                    RequestCount = metrics.Value.RequestCount,
-                    SuccessCount = metrics.Value.SuccessCount,
-                    FailureCount = metrics.Value.FailureCount,
-                    TotalTokens = metrics.Value.TotalTokens,
-                    AverageResponseTimeMs = (long)metrics.Value.AverageResponseTimeMs,
-                    TotalCostUsd = metrics.Value.TotalCostUsd
-                };
-                
-                await _dbContext.ModelMetricsRecords.AddAsync(record);
-                
-                _logger.LogInformation("Aggregated metrics for model {ModelId}: requests={Requests}, success={Success}, failure={Failure}, tokens={Tokens}, cost={Cost}",
-                    metrics.Value.ModelId, metrics.Value.RequestCount, metrics.Value.SuccessCount, metrics.Value.FailureCount, metrics.Value.TotalTokens, metrics.Value.TotalCostUsd);
-                
-                // Reset metrics
-                _modelMetrics[metrics.Key] = new ModelPerformanceMetrics
-                {
-                    ModelId = metrics.Value.ModelId,
-                    Provider = metrics.Value.Provider
-                };
+                await dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to store model metrics record for {ModelId}", metrics.Key);
+                _logger.LogError(ex, "Failed to save model metrics records");
             }
-        }
-        
-        try
-        {
-            await _dbContext.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to save model metrics records");
         }
     }
 }

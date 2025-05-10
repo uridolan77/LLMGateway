@@ -24,18 +24,26 @@ public static class BackgroundJobExtensions
         // Add Quartz
         services.AddQuartz(q =>
         {
-            // Register job factory
-            q.UseMicrosoftDependencyInjectionJobFactory();
+            // Register job factory is no longer needed - it's the default
+            // q.UseMicrosoftDependencyInjectionJobFactory() is obsolete
             
             // Add token usage report job
             if (jobOptions.EnableTokenUsageReports)
             {
                 var tokenUsageReportJobKey = new JobKey("TokenUsageReportJob");
-                q.AddJob<TokenUsageReportJob>(opts => opts.WithIdentity(tokenUsageReportJobKey));
-                q.AddTrigger(opts => opts
-                    .ForJob(tokenUsageReportJobKey)
-                    .WithIdentity("TokenUsageReportJob-Trigger")
-                    .WithCronSchedule(jobOptions.TokenUsageReportSchedule));
+                try
+                {
+                    q.AddJob<TokenUsageReportJob>(opts => opts.WithIdentity(tokenUsageReportJobKey));
+                    q.AddTrigger(opts => opts
+                        .ForJob(tokenUsageReportJobKey)
+                        .WithIdentity("TokenUsageReportJob-Trigger")
+                        .WithCronSchedule(jobOptions.TokenUsageReportSchedule));
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but don't fail startup
+                    Console.WriteLine($"Invalid cron expression for TokenUsageReportSchedule: {jobOptions.TokenUsageReportSchedule}. Error: {ex.Message}");
+                }
             }
             
             // Add provider health check job
@@ -55,33 +63,57 @@ public static class BackgroundJobExtensions
             if (jobOptions.EnableModelMetricsAggregation)
             {
                 var modelMetricsAggregationJobKey = new JobKey("ModelMetricsAggregationJob");
-                q.AddJob<ModelMetricsAggregationJob>(opts => opts.WithIdentity(modelMetricsAggregationJobKey));
-                q.AddTrigger(opts => opts
-                    .ForJob(modelMetricsAggregationJobKey)
-                    .WithIdentity("ModelMetricsAggregationJob-Trigger")
-                    .WithCronSchedule(jobOptions.ModelMetricsAggregationSchedule));
+                try
+                {
+                    q.AddJob<ModelMetricsAggregationJob>(opts => opts.WithIdentity(modelMetricsAggregationJobKey));
+                    q.AddTrigger(opts => opts
+                        .ForJob(modelMetricsAggregationJobKey)
+                        .WithIdentity("ModelMetricsAggregationJob-Trigger")
+                        .WithCronSchedule(jobOptions.ModelMetricsAggregationSchedule));
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but don't fail startup
+                    Console.WriteLine($"Invalid cron expression for ModelMetricsAggregationSchedule: {jobOptions.ModelMetricsAggregationSchedule}. Error: {ex.Message}");
+                }
             }
             
             // Add database maintenance job
             if (jobOptions.EnableDatabaseMaintenance)
             {
                 var databaseMaintenanceJobKey = new JobKey("DatabaseMaintenanceJob");
-                q.AddJob<DatabaseMaintenanceJob>(opts => opts.WithIdentity(databaseMaintenanceJobKey));
-                q.AddTrigger(opts => opts
-                    .ForJob(databaseMaintenanceJobKey)
-                    .WithIdentity("DatabaseMaintenanceJob-Trigger")
-                    .WithCronSchedule(jobOptions.DatabaseMaintenanceSchedule));
+                try
+                {
+                    q.AddJob<DatabaseMaintenanceJob>(opts => opts.WithIdentity(databaseMaintenanceJobKey));
+                    q.AddTrigger(opts => opts
+                        .ForJob(databaseMaintenanceJobKey)
+                        .WithIdentity("DatabaseMaintenanceJob-Trigger")
+                        .WithCronSchedule(jobOptions.DatabaseMaintenanceSchedule));
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but don't fail startup
+                    Console.WriteLine($"Invalid cron expression for DatabaseMaintenanceSchedule: {jobOptions.DatabaseMaintenanceSchedule}. Error: {ex.Message}");
+                }
             }
             
             // Add cost report job
             if (jobOptions.EnableCostReports)
             {
                 var costReportJobKey = new JobKey("CostReportJob");
-                q.AddJob<CostReportJob>(opts => opts.WithIdentity(costReportJobKey));
-                q.AddTrigger(opts => opts
-                    .ForJob(costReportJobKey)
-                    .WithIdentity("CostReportJob-Trigger")
-                    .WithCronSchedule(jobOptions.CostReportSchedule));
+                try
+                {
+                    q.AddJob<CostReportJob>(opts => opts.WithIdentity(costReportJobKey));
+                    q.AddTrigger(opts => opts
+                        .ForJob(costReportJobKey)
+                        .WithIdentity("CostReportJob-Trigger")
+                        .WithCronSchedule(jobOptions.CostReportSchedule));
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but don't fail startup
+                    Console.WriteLine($"Invalid cron expression for CostReportSchedule: {jobOptions.CostReportSchedule}. Error: {ex.Message}");
+                }
             }
         });
         

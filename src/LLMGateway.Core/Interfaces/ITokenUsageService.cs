@@ -50,6 +50,15 @@ public interface ITokenUsageService
     Task<IEnumerable<TokenUsageRecord>> GetUsageForModelAsync(string modelId, DateTimeOffset startDate, DateTimeOffset endDate);
     
     /// <summary>
+    /// Get token usage statistics
+    /// </summary>
+    /// <param name="startDate">Start date</param>
+    /// <param name="endDate">End date</param>
+    /// <param name="groupBy">Group by criteria (day, month, model, user)</param>
+    /// <returns>Token usage statistics</returns>
+    Task<IEnumerable<object>> GetTokenUsageStatisticsAsync(DateTimeOffset? startDate, DateTimeOffset? endDate, string? groupBy);
+    
+    /// <summary>
     /// Get token usage for a provider
     /// </summary>
     /// <param name="provider">Provider name</param>
